@@ -1,0 +1,7 @@
+package com.example.cooks_corner.exception;
+
+public class UserCreationException extends RuntimeException {
+    public UserCreationException(String message) {
+        super(message);
+    }
+}
