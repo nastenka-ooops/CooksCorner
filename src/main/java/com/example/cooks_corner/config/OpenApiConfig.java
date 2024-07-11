@@ -14,6 +14,7 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
+                .addServersItem(new Server().url("https://cookscorner-production-9502.up.railway.app"))
                 .addServersItem(new Server().url("http://localhost:8080"))
                 .info(new Info()
                         .title("Cooks Corner API")
