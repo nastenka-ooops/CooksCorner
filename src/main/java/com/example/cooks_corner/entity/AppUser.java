@@ -68,7 +68,7 @@ public class AppUser implements UserDetails {
     @ManyToMany(mappedBy = "likes")
     private Set<Recipe> likedRecipes = new HashSet<>();
 
-    @OneToMany(mappedBy = "userEntity")
+    @OneToMany(mappedBy = "user")
     private Set<Recipe> recipes = new HashSet<>();
 
     public AppUser(String name, String email, String password, Set<Role> roles) {

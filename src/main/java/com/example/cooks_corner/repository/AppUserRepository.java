@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     Optional<AppUser> findByEmailIgnoreCase(String email);
+    boolean existsByIdAndLikedRecipes_Id(Long userId, Long recipesId);
+    boolean existsByIdAndBookmarkedRecipes_id(Long userId, Long recipesId);
 }

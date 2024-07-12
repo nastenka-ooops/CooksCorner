@@ -21,7 +21,7 @@ public class MailService {
         this.mailSender = mailSender;
     }
 
-    public void sendConfirmation(RegistrationRequest user) {
+    public void sendConfirmation(String userEmail) {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
         String url = attributes.getRequest().getRequestURL().toString();
@@ -31,14 +31,14 @@ public class MailService {
             url = url.substring(0, url.lastIndexOf("/"));
         }
 
-        String token = tokenService.generateToken(user.email());
+        String token = tokenService.generateToken(userEmail);
 
         String subject = "Подтверждение регистрации";
         String confirmationUrl = url + "/confirmation?token=" + token;
         String message = "Чтобы подтвердить регистрацию, перейдите по следующей ссылке: " + confirmationUrl;
 
         SimpleMailMessage email = new SimpleMailMessage();
-        email.setTo(user.email());
+        email.setTo(userEmail);
         email.setSubject(subject);
         email.setText(message);
 

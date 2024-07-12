@@ -9,13 +9,16 @@ import com.example.cooks_corner.entity.Role;
 import com.example.cooks_corner.entity.enums.RoleEnum;
 import com.example.cooks_corner.exception.EmailAlreadyTakenException;
 import com.example.cooks_corner.exception.InvalidRegistrationRequestException;
-import com.example.cooks_corner.exception.PasswordMismatchException;
 import com.example.cooks_corner.repository.AppUserRepository;
 import com.example.cooks_corner.repository.RoleRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -63,10 +66,6 @@ public class AuthenticationService {
             throw new EmailAlreadyTakenException("Login is already taken");
         }
 
-        if (!registrationRequest.password().equals(registrationRequest.confirmPassword())){
-            throw new PasswordMismatchException("Passwords do not match");
-        }
-
         AppUser user = new AppUser(registrationRequest.name(), registrationRequest.email(),
                 passwordEncoder.encode(registrationRequest.password()), new HashSet<>());
 
@@ -75,18 +74,24 @@ public class AuthenticationService {
 
         userRepository.save(user);
 
-        mailService.sendConfirmation(registrationRequest);
+        mailService.sendConfirmation(user.getEmail());
     }
 
     public LoginResponse loginUser(LoginRequest loginRequest) {
-        Optional<AppUser> user = userRepository.findByEmailIgnoreCase(loginRequest.email());
-
-        if (user.isEmpty()) {
-            throw new BadCredentialsException("Invalid name or password");
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.email(), loginRequest.password()));
+        } catch (DisabledException e) {
+            throw new DisabledException("User is disable");
+        } catch (BadCredentialsException e) {
+            throw new BadCredentialsException("This email does not exist");
         }
+        AppUser user = (AppUser) authentication.getPrincipal();
 
-        String accessToken = tokenService.generateAccessToken(user.get());
-        String refreshToken = tokenService.generateRefreshToken(user.get());
+        String accessToken = tokenService.generateAccessToken(user);
+        String refreshToken = tokenService.generateRefreshToken(user);
 
         return new LoginResponse(loginRequest.email(),
                 accessToken, refreshToken);
@@ -101,7 +106,7 @@ public class AuthenticationService {
         Jwt decodedToken = tokenService.decodeToken(token);
         if (decodedToken != null) {
             String email = decodedToken.getSubject();
-            AppUser user = userService.findByEmail(email);
+            AppUser user = userService.loadUserByUsername(email);
             if (user != null && !user.getEnabled()) {
                 userService.confirmUser(user);
 
@@ -138,13 +143,9 @@ public class AuthenticationService {
     public String updatePassword(String token, PasswordUpdateRequest request) {
         Jwt decodedToken = tokenService.decodeToken(token);
 
-        if (!request.password().equals(request.confirmPassword())) {
-            throw new PasswordMismatchException("Passwords do not match");
-        }
-
         if (decodedToken != null) {
             String email = decodedToken.getSubject();
-            AppUser user = userService.findByEmail(email);
+            AppUser user = userService.loadUserByUsername(email);
             if (user != null) {
                 user.setPassword(passwordEncoder.encode(request.password()));
                 userRepository.save(user);

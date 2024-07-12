@@ -3,13 +3,14 @@ package com.example.cooks_corner.entity;
 import com.example.cooks_corner.entity.enums.Category;
 import com.example.cooks_corner.entity.enums.Difficulty;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Set;
 
 @Entity
-@Data
+@Setter
+@Getter
+@ToString
 @NoArgsConstructor
 public class Recipe {
     @Id
@@ -39,9 +40,10 @@ public class Recipe {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private AppUser userEntity;
+    private AppUser user;
 
-    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "recipe", fetch = FetchType.EAGER)
+    @ToString.Exclude
     private Set<RecipeIngredient> recipeIngredients;
 
     @ManyToMany

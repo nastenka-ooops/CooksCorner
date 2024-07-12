@@ -1,11 +1,15 @@
 package com.example.cooks_corner.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
 public class Ingredient {
     @Id
@@ -14,4 +18,8 @@ public class Ingredient {
 
     @Column(nullable = false)
     private String name;
+
+    @OneToMany(mappedBy = "ingredient", fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private Set<RecipeIngredient> recipeIngredients = new HashSet<>();
 }

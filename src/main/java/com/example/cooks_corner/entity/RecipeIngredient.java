@@ -1,12 +1,13 @@
 package com.example.cooks_corner.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "recipe_ingredient_junction")
-@Data
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
 public class RecipeIngredient {
     @Id
@@ -19,11 +20,13 @@ public class RecipeIngredient {
     @Column(nullable = false, name = "measure_unit")
     private String measureUnit;
 
-    @ManyToOne
+    @ManyToOne()
     @JoinColumn(name = "recipe_id")
+    @ToString.Exclude
     private Recipe recipe;
 
     @ManyToOne()
     @JoinColumn(name = "ingredient_id")
+    @ToString.Exclude
     private Ingredient ingredient;
 }

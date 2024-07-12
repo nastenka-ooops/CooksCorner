@@ -19,7 +19,7 @@ create table app_user
         constraint app_user_email_pk
             unique,
     password  varchar(255)          not null,
-    image_id  bigint                not null
+    image_id  bigint
         constraint app_user_image_fk
             references image,
     is_enable boolean default false not null,
@@ -91,7 +91,7 @@ create table recipe
             primary key,
     title                varchar(255) not null,
     description          varchar(255) not null,
-    image_id             bigint       not null
+    image_id             bigint
         constraint image_fk
             references image,
     category             integer      not null,

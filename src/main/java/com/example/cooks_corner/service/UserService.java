@@ -4,6 +4,7 @@ import com.example.cooks_corner.dto.UserDto;
 import com.example.cooks_corner.entity.AppUser;
 import com.example.cooks_corner.repository.AppUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -24,11 +25,6 @@ public class UserService implements UserDetailsService {
                 new UsernameNotFoundException("user not found"));
     }
 
-    public AppUser findByEmail(String email) {
-        return userRepository.findByEmailIgnoreCase(email).orElseThrow(() ->
-                new UsernameNotFoundException("user not found"));
-    }
-
     public UserDto getUser(String email) {
         AppUser user = loadUserByUsername(email);
         return new UserDto(user.getName(), user.getBio(), user.getEmail(), user.getImage().getUrl());
@@ -41,5 +37,9 @@ public class UserService implements UserDetailsService {
 
     public void deleteAllUsers(){
         userRepository.deleteAll();
+    }
+
+    public String getCurrentUser() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }

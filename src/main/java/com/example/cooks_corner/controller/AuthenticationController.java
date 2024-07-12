@@ -19,10 +19,9 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1")
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
     private final TokenService tokenService;
@@ -36,7 +35,8 @@ public class AuthenticationController {
         this.mailService = mailService;
     }
 
-    @Operation(summary = "Register a new user", description = "Registers a new user with the provided registration details.")
+    @Operation(summary = "Register a new user", description = "Registers a new user with the provided registration details.",
+                tags = "Registration")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Registration successful",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))),
@@ -56,7 +56,8 @@ public class AuthenticationController {
 
     @Operation(
             summary = "Confirm email address",
-            description = "Confirms the user's email address using the provided token."
+            description = "Confirms the user's email address using the provided token.",
+            tags = "Registration"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Email confirmed successfully", content = @Content(mediaType = "text/plain")),
@@ -80,21 +81,25 @@ public class AuthenticationController {
 
     @Operation(summary = "Resend Confirmation Email",
             description = "Resends the confirmation email to the user's email address. " +
-                    "This endpoint should be used if the user did not receive the initial confirmation email or if the previous link has expired.")
+                    "This endpoint should be used if the user did not receive the initial confirmation email or if the previous link has expired.",
+            tags = "Registration")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Resend confirmation email successful"),
             @ApiResponse(responseCode = "400", description = "Invalid request")
     })
     @PostMapping("/registration/resend-confirmation")
     public ResponseEntity<String> resendConfirmEmail(
-            @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Registration request containing user details",
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = RegistrationRequest.class))) RegistrationRequest registrationRequest) {
-        mailService.sendConfirmation(registrationRequest);
+            @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Email address of the user",
+                    required = true)
+            String email) {
+        mailService.sendConfirmation(email);
         return ResponseEntity.ok("Resend confirmation email successful");
     }
 
-    @Operation(summary = "User email", description = "Authenticate user and return a JWT token.")
+    @Operation(summary = "User email",
+            description = "Authenticate user and return a JWT token.",
+            tags = "Authentication")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully authenticated",
                     content = @Content(schema = @Schema(implementation = LoginResponse.class))),
@@ -115,7 +120,9 @@ public class AuthenticationController {
         return ResponseEntity.ok(loginResponse);
     }
 
-    @Operation(summary = "Refresh Token", description = "Refreshes the JWT access token using a valid refresh token.")
+    @Operation(summary = "Refresh Token",
+            description = "Refreshes the JWT access token using a valid refresh token.",
+            tags = "Authentication")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid refresh token")
@@ -125,7 +132,9 @@ public class AuthenticationController {
         return ResponseEntity.ok(tokenService.refreshToken(refreshToken));
     }
 
-    @Operation(summary = "Request password reset", description = "Sends a password reset email to the specified email address.")
+    @Operation(summary = "Request password reset",
+            description = "Sends a password reset email to the specified email address.",
+            tags = "Reset password")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Password reset email sent successfully",
                     content = @Content),
@@ -138,7 +147,9 @@ public class AuthenticationController {
         return ResponseEntity.ok("Password reset email sent successfully");
     }
 
-    @Operation(summary = "Reset password", description = "Resets the password using the provided token and new password.")
+    @Operation(summary = "Reset password",
+            description = "Resets the password using the provided token and new password.",
+            tags = "Reset password")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Password reset successfully",
                     content = @Content),
@@ -151,7 +162,9 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.updatePassword(token, request));
     }
 
-    @Operation(summary = "Logout endpoint", description = "Clears the security context to log the user out.")
+    @Operation(summary = "Logout endpoint",
+            description = "Clears the security context to log the user out.",
+            tags = "Authentication")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Logout successful")
     })

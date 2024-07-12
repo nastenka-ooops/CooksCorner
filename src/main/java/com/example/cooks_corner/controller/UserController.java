@@ -35,7 +35,6 @@ public class UserController {
     @DeleteMapping("/delete-all")
     public ResponseEntity<String> clearUsers() {
         userService.deleteAllUsers();
-
         return ResponseEntity.ok("All users deleted successfully");
     }
 }
