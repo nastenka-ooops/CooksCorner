@@ -25,6 +25,11 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>("Invalid registration request", HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidCreatingRecipeRequestException.class)
+    public ResponseEntity<String> handleInvalidCreatingRecipeRequestException() {
+        return new ResponseEntity<>("Invalid creating recipe request", HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(RecipeNotFoundException.class)
     public ResponseEntity<String> handleRecipeNotFoundException() {
         return new ResponseEntity<>("Recipe not found", HttpStatus.NOT_FOUND);
@@ -48,6 +53,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<String> handleDisabledException() {
         return new ResponseEntity<>("User is disable", HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException() {
+        return new ResponseEntity<>("Invalid JSON format for CreatingTourDto", HttpStatus.BAD_REQUEST);
     }
 /*
     @ExceptionHandler(Exception.class)

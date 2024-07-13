@@ -62,4 +62,18 @@ public class Recipe {
     )
     private Set<AppUser> bookmarks;
 
+    public Recipe(String title, String description, Category category, Difficulty difficulty, int cookingTimeMinutes,
+                  Image image, AppUser user, Set<RecipeIngredient> recipeIngredients, Set<AppUser> likes,
+                  Set<AppUser> bookmarks) {
+        this.title = title;
+        this.description = description;
+        this.category = category;
+        this.difficulty = difficulty;
+        this.cookingTimeMinutes = cookingTimeMinutes;
+        this.image = image;
+        this.user = user;
+        this.recipeIngredients = recipeIngredients;
+        this.likes = likes;
+        this.bookmarks = bookmarks;
+    }
 }

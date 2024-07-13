@@ -1,28 +1,57 @@
 package com.example.cooks_corner.service;
 
+import com.example.cooks_corner.dto.CreatingRecipeRequest;
 import com.example.cooks_corner.dto.RecipeDto;
+import com.example.cooks_corner.dto.RecipeIngredientDto;
+import com.example.cooks_corner.dto.RecipeListDto;
 import com.example.cooks_corner.entity.AppUser;
+import com.example.cooks_corner.entity.Ingredient;
 import com.example.cooks_corner.entity.Recipe;
+import com.example.cooks_corner.entity.RecipeIngredient;
+import com.example.cooks_corner.entity.enums.Category;
+import com.example.cooks_corner.exception.InvalidCreatingRecipeRequestException;
 import com.example.cooks_corner.exception.RecipeNotFoundException;
 import com.example.cooks_corner.mapper.RecipeIngredientMapper;
+import com.example.cooks_corner.mapper.RecipeMapper;
 import com.example.cooks_corner.repository.AppUserRepository;
+import com.example.cooks_corner.repository.IngredientRepository;
+import com.example.cooks_corner.repository.RecipeIngredientRepository;
 import com.example.cooks_corner.repository.RecipeRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.Validator;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class RecipeService {
     private final RecipeRepository recipeRepository;
     private final AppUserRepository userRepository;
+    private final IngredientRepository ingredientRepository;
+    private final RecipeIngredientRepository recipeIngredientRepository;
     private final UserService userService;
+    private final ImageService imageService;
+    private final Validator validator;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public RecipeService(RecipeRepository recipeRepository, AppUserRepository appUserRepository, UserService userService) {
+    public RecipeService(RecipeRepository recipeRepository, AppUserRepository appUserRepository, IngredientRepository ingredientRepository, RecipeIngredientRepository recipeIngredientRepository, UserService userService, ImageService imageService, Validator validator, ObjectMapper objectMapper) {
         this.recipeRepository = recipeRepository;
         this.userRepository = appUserRepository;
+        this.ingredientRepository = ingredientRepository;
+        this.recipeIngredientRepository = recipeIngredientRepository;
         this.userService = userService;
+        this.imageService = imageService;
+        this.validator = validator;
+        this.objectMapper = objectMapper;
     }
 
     public RecipeDto getRecipeById(Long id) {
@@ -31,29 +60,108 @@ public class RecipeService {
             throw new RecipeNotFoundException("Recipe not found with ID: " + id);
         }
         Recipe recipeEntity = recipe.get();
-        String username = userService.getCurrentUser();
-        AppUser user = userService.loadUserByUsername(username);
-        boolean isLiked = isLiked(recipeEntity.getId(), user.getId());
-        boolean isBookmarked = isBookmarked(recipeEntity.getId(), user.getId());
 
-        return new RecipeDto(recipeEntity.getTitle(),
-                recipeEntity.getDescription(),
-                recipeEntity.getImage().getUrl(),
-                recipeEntity.getCategory(),
-                recipeEntity.getDifficulty(),
-                recipeEntity.getCookingTimeMinutes(),
-                recipeEntity.getUser().getName(),
-                isLiked,
-                recipeEntity.getLikes().size(),
-                isBookmarked,
-                recipeEntity.getBookmarks().size(),
-                recipeEntity.getRecipeIngredients().stream().map(RecipeIngredientMapper::mapToRecipeIngredientDto).toList());
+        return mapToRecipeDto(recipeEntity);
     }
 
-    private boolean isLiked(Long recipeId, Long userId ){
+    public List<RecipeListDto> getRecipeListByCategory(Category category) {
+        return recipeRepository.findByCategory(category).stream()
+                .map(RecipeMapper::mapToRecipeListDto).toList();
+    }
+
+    public List<RecipeListDto> searchRecipes(String query) {
+        return recipeRepository.searchByQuery(query).stream()
+                .map(RecipeMapper::mapToRecipeListDto).toList();
+    }
+
+    public RecipeDto createRecipe(String dto, MultipartFile image) {
+        CreatingRecipeRequest recipeDto;
+
+        try {
+            recipeDto = objectMapper.readValue(dto, CreatingRecipeRequest.class);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid JSON format for CreatingTourDto");
+        }
+
+        validateCreatingRecipeRequest(recipeDto);
+
+        AppUser user = userService.loadUserByUsername(userService.getCurrentUser());
+
+        Recipe recipe = new Recipe();
+        recipe.setTitle(recipeDto.name());
+        recipe.setDescription(recipeDto.description());
+        recipe.setImage(imageService.uploadImage(image));
+        recipe.setUser(user);
+        recipe.setCategory(recipeDto.category());
+        recipe.setDifficulty(recipeDto.difficulty());
+        recipe.setCookingTimeMinutes(recipeDto.cookingTime());
+        recipe.setLikes(new HashSet<>());
+        recipe.setBookmarks(new HashSet<>());
+        setRecipeIngredients(recipeDto.recipeIngredients(), recipe);
+
+        Recipe savedRecipe = recipeRepository.save(recipe);
+        recipeIngredientRepository.saveAll(savedRecipe.getRecipeIngredients());
+
+        return mapToRecipeDto(savedRecipe);
+    }
+
+    private boolean isLiked(Long recipeId, Long userId) {
         return userRepository.existsByIdAndLikedRecipes_Id(userId, recipeId);
     }
-    private boolean isBookmarked(Long recipeId, Long userId ){
+
+    private boolean isBookmarked(Long recipeId, Long userId) {
         return userRepository.existsByIdAndBookmarkedRecipes_id(userId, recipeId);
+    }
+
+    private RecipeDto mapToRecipeDto(Recipe recipe) {
+        String username = userService.getCurrentUser();
+        AppUser user = userService.loadUserByUsername(username);
+        boolean isLiked = isLiked(recipe.getId(), user.getId());
+        boolean isBookmarked = isBookmarked(recipe.getId(), user.getId());
+
+        return new RecipeDto(
+                recipe.getId(),
+                recipe.getTitle(),
+                recipe.getDescription(),
+                (recipe.getImage() != null) ? recipe.getImage().getUrl() : null,
+                recipe.getCategory(),
+                recipe.getDifficulty(),
+                recipe.getCookingTimeMinutes(),
+                recipe.getUser().getName(),
+                isLiked,
+                recipe.getLikes().size(),
+                isBookmarked,
+                recipe.getBookmarks().size(),
+                recipe.getRecipeIngredients().stream().map(RecipeIngredientMapper::mapToRecipeIngredientDto).toList());
+    }
+
+    private void setRecipeIngredients(Set<RecipeIngredientDto> recipeIngredientDtos, Recipe recipe) {
+        Set<RecipeIngredient> recipeIngredients = new HashSet<>();
+
+        for (RecipeIngredientDto recipeIngredientDto : recipeIngredientDtos) {
+            Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(recipeIngredientDto.ingredientName())
+                    .orElseGet(() -> {
+                        Ingredient newIngredient = new Ingredient(recipeIngredientDto.ingredientName());
+                        return ingredientRepository.save(newIngredient);
+                    });
+
+            RecipeIngredient newRecipeIngredient = new RecipeIngredient(
+                    recipeIngredientDto.amount(),
+                    recipeIngredientDto.measure_unit(),
+                    recipe,
+                    ingredient
+            );
+            recipeIngredients.add(newRecipeIngredient);
+        }
+        recipe.setRecipeIngredients(recipeIngredients);
+    }
+
+    private void validateCreatingRecipeRequest(CreatingRecipeRequest request) {
+        BindingResult bindingResult = new BeanPropertyBindingResult(request, "registrationRequest");
+        validator.validate(request, bindingResult);
+
+        if (bindingResult.hasErrors()) {
+            throw new InvalidCreatingRecipeRequestException("Invalid creating recipe request " + bindingResult.getAllErrors());
+        }
     }
 }

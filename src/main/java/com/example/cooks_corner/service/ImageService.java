@@ -25,7 +25,11 @@ public class ImageService {
         this.cloudinary = cloudinary;
     }
 
-    public ImageDto uploadImage(MultipartFile file) {
+    public Image uploadImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
         Map params = ObjectUtils.asMap(
                 "folder", "CooksCorner"
         );
@@ -43,8 +47,7 @@ public class ImageService {
         Image image = new Image(imageUrl, file.getOriginalFilename());
 
         try {
-            imageRepository.save(image);
-            return new ImageDto(image.getUrl(), image.getName());
+            return imageRepository.save(image);
         } catch (Exception e) {
             throw new ImageUploadException("Failed to save image to the repository", e);
         }

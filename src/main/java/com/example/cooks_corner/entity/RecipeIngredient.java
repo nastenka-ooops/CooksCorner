@@ -29,4 +29,11 @@ public class RecipeIngredient {
     @JoinColumn(name = "ingredient_id")
     @ToString.Exclude
     private Ingredient ingredient;
+
+    public RecipeIngredient(double amount, String measureUnit, Recipe recipe, Ingredient ingredient) {
+        this.amount = amount;
+        this.measureUnit = measureUnit;
+        this.recipe = recipe;
+        this.ingredient = ingredient;
+    }
 }

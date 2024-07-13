@@ -19,7 +19,7 @@ public class Ingredient {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "ingredient", fetch = FetchType.LAZY)
-    @ToString.Exclude
-    private Set<RecipeIngredient> recipeIngredients = new HashSet<>();
+    public Ingredient(String name) {
+        this.name = name;
+    }
 }
