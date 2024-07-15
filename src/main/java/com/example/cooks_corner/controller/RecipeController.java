@@ -3,6 +3,7 @@ package com.example.cooks_corner.controller;
 import com.example.cooks_corner.dto.CreateRecipeRequest;
 import com.example.cooks_corner.dto.RecipeDto;
 import com.example.cooks_corner.dto.RecipeListDto;
+import com.example.cooks_corner.dto.UpdateRecipeRequest;
 import com.example.cooks_corner.entity.enums.Category;
 import com.example.cooks_corner.service.RecipeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +41,31 @@ public class RecipeController {
             @Parameter(description = "ID of the recipe to be obtained. Cannot be empty.", example = "1")
             @PathVariable Long id) {
         return ResponseEntity.ok(recipeService.getRecipeById(id));
+    }
+    @Operation(
+            summary = "Like a recipe",
+            description = "Adds a like to the specified recipe by the current user. If the recipe is already liked, it will be unliked.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully liked/unliked the recipe"),
+                    @ApiResponse(responseCode = "404", description = "Recipe not found")
+            }
+    )
+    @PostMapping("/{id}/like")
+    public ResponseEntity<RecipeDto> likeRecipe(@PathVariable Long id) {
+        return ResponseEntity.ok(recipeService.likeRecipe(id));
+    }
+
+    @Operation(
+            summary = "Bookmark a recipe",
+            description = "Adds a bookmark to the specified recipe by the current user. If the recipe is already bookmarked, the bookmark will be removed.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully bookmarked/unbookmarked the recipe"),
+                    @ApiResponse(responseCode = "404", description = "Recipe not found")
+            }
+    )
+    @PostMapping("/{id}/bookmark")
+    public ResponseEntity<RecipeDto> bookmarkRecipe(@PathVariable Long id) {
+        return ResponseEntity.ok(recipeService.bookmarkRecipe(id));
     }
 
     @Operation(summary = "Get recipes by category", description = "Returns a list of recipes belonging to the specified category.")
@@ -92,13 +118,41 @@ public class RecipeController {
         return ResponseEntity.ok(recipeService.createRecipe(recipe, image));
     }
 
+    @Operation(
+            summary = "Update a recipe",
+            description = "Updates an existing recipe with new data and optionally a new image",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Recipe successfully updated",
+                            content = @Content(
+                                    schema = @Schema(implementation = RecipeDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input data",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Recipe not found",
+                            content = @Content
+                    )
+            }
+    )
     @PutMapping()
     public ResponseEntity<RecipeDto> updateRecipe(
-            @Parameter(description = "Recipe data in JSON format", required = true,
-                    schema = @Schema(implementation = CreateRecipeRequest.class))
+            @Parameter(
+                    description = "Recipe data in JSON format",
+                    required = true,
+                    schema = @Schema(implementation = UpdateRecipeRequest.class)
+            )
             @RequestPart(name = "recipe") String recipe,
-            @Parameter(description = "Optional image file for the recipe",
-                    schema = @Schema(implementation = MultipartFile.class))
+            @Parameter(
+                    description = "Optional image file for the recipe",
+                    schema = @Schema(implementation = MultipartFile.class)
+            )
             @RequestPart(name = "image", required = false) MultipartFile image) {
         return ResponseEntity.ok(recipeService.updateRecipe(recipe, image));
     }

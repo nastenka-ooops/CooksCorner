@@ -141,6 +141,44 @@ public class RecipeService {
         return mapToRecipeDto(updatedRecipe);
     }
 
+    public RecipeDto likeRecipe(Long id) {
+        Optional<Recipe> recipeOptional = recipeRepository.findById(id);
+        if (recipeOptional.isEmpty()) {
+            throw new RecipeNotFoundException("Recipe not found with ID: " + id);
+        }
+        Recipe recipeEntity = recipeOptional.get();
+
+        AppUser user = userService.loadUserByUsername(userService.getCurrentUser());
+
+        if (recipeEntity.getLikes().contains(user)){
+            recipeEntity.getLikes().remove(user);
+        } else {
+            recipeEntity.getLikes().add(user);
+        }
+
+        Recipe updatedRecipe = recipeRepository.save(recipeEntity);
+        return mapToRecipeDto(updatedRecipe);
+    }
+
+    public RecipeDto bookmarkRecipe(Long id) {
+        Optional<Recipe> recipeOptional = recipeRepository.findById(id);
+        if (recipeOptional.isEmpty()) {
+            throw new RecipeNotFoundException("Recipe not found with ID: " + id);
+        }
+        Recipe recipeEntity = recipeOptional.get();
+
+        AppUser user = userService.loadUserByUsername(userService.getCurrentUser());
+
+        if (recipeEntity.getBookmarks().contains(user)){
+            recipeEntity.getBookmarks().remove(user);
+        } else {
+            recipeEntity.getBookmarks().add(user);
+        }
+
+        Recipe updatedRecipe = recipeRepository.save(recipeEntity);
+        return mapToRecipeDto(updatedRecipe);
+    }
+
     private boolean isLiked(Long recipeId, Long userId) {
         return userRepository.existsByIdAndLikedRecipes_Id(userId, recipeId);
     }
