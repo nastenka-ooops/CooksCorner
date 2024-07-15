@@ -5,7 +5,7 @@ import com.example.cooks_corner.entity.RecipeIngredient;
 
 public class RecipeIngredientMapper {
     public static RecipeIngredientDto mapToRecipeIngredientDto(RecipeIngredient recipeIngredient) {
-        return new RecipeIngredientDto(recipeIngredient.getIngredient().getName(), recipeIngredient.getAmount(),
+        return new RecipeIngredientDto(recipeIngredient.getIngredient().getId(), recipeIngredient.getIngredient().getName(), recipeIngredient.getAmount(),
                 recipeIngredient.getMeasureUnit());
     }
 }

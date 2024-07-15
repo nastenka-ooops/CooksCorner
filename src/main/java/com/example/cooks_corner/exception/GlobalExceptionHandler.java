@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<String> handleBadCredentialsException() {
-        return new ResponseEntity<>("Invalid name or password", HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>("Invalid title or password", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(DisabledException.class)

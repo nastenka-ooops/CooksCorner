@@ -1,9 +1,6 @@
 package com.example.cooks_corner.service;
 
-import com.example.cooks_corner.dto.CreatingRecipeRequest;
-import com.example.cooks_corner.dto.RecipeDto;
-import com.example.cooks_corner.dto.RecipeIngredientDto;
-import com.example.cooks_corner.dto.RecipeListDto;
+import com.example.cooks_corner.dto.*;
 import com.example.cooks_corner.entity.AppUser;
 import com.example.cooks_corner.entity.Ingredient;
 import com.example.cooks_corner.entity.Recipe;
@@ -75,20 +72,20 @@ public class RecipeService {
     }
 
     public RecipeDto createRecipe(String dto, MultipartFile image) {
-        CreatingRecipeRequest recipeDto;
+        CreateRecipeRequest recipeDto;
 
         try {
-            recipeDto = objectMapper.readValue(dto, CreatingRecipeRequest.class);
+            recipeDto = objectMapper.readValue(dto, CreateRecipeRequest.class);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Invalid JSON format for CreatingTourDto");
         }
 
-        validateCreatingRecipeRequest(recipeDto);
+        validateCreateRecipeRequest(recipeDto);
 
         AppUser user = userService.loadUserByUsername(userService.getCurrentUser());
 
         Recipe recipe = new Recipe();
-        recipe.setTitle(recipeDto.name());
+        recipe.setTitle(recipeDto.title());
         recipe.setDescription(recipeDto.description());
         recipe.setImage(imageService.uploadImage(image));
         recipe.setUser(user);
@@ -97,12 +94,51 @@ public class RecipeService {
         recipe.setCookingTimeMinutes(recipeDto.cookingTime());
         recipe.setLikes(new HashSet<>());
         recipe.setBookmarks(new HashSet<>());
-        setRecipeIngredients(recipeDto.recipeIngredients(), recipe);
+        setRecipeIngredients(recipeDto.ingredients(), recipe);
 
         Recipe savedRecipe = recipeRepository.save(recipe);
-        recipeIngredientRepository.saveAll(savedRecipe.getRecipeIngredients());
 
         return mapToRecipeDto(savedRecipe);
+    }
+
+    public RecipeDto updateRecipe(String dto, MultipartFile image) {
+        UpdateRecipeRequest recipeDto;
+
+        try {
+            recipeDto = objectMapper.readValue(dto, UpdateRecipeRequest.class);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid JSON format for CreatingTourDto");
+        }
+
+        validateUpdateRecipeRequest(recipeDto);
+
+        Optional<Recipe> recipeOptional = recipeRepository.findById(recipeDto.id());
+        if (recipeOptional.isEmpty()) {
+            throw new RecipeNotFoundException("Recipe not found with ID: " + recipeDto.id());
+        }
+
+        Recipe recipeEntity = recipeOptional.get();
+
+        AppUser user = userService.loadUserByUsername(userService.getCurrentUser());
+        if (!user.equals(recipeEntity.getUser())){
+            throw new InvalidCreatingRecipeRequestException("This user is not allowed to update this recipe");
+        }
+
+        recipeEntity.setTitle(recipeDto.title());
+        recipeEntity.setDescription(recipeDto.description());
+        recipeEntity.setImage(image != null ? imageService.uploadImage(image) : recipeEntity.getImage());
+        recipeEntity.setCategory(recipeDto.category());
+        recipeEntity.setDifficulty(recipeDto.difficulty());
+        recipeEntity.setCookingTimeMinutes(recipeDto.cookingTime());
+        recipeEntity.setLikes(new HashSet<>());
+        recipeEntity.setBookmarks(new HashSet<>());
+
+        deleteByRecipe(recipeEntity);
+        setRecipeIngredients(recipeDto.ingredients(), recipeEntity);
+
+        Recipe updatedRecipe = recipeRepository.save(recipeEntity);
+
+        return mapToRecipeDto(updatedRecipe);
     }
 
     private boolean isLiked(Long recipeId, Long userId) {
@@ -147,21 +183,37 @@ public class RecipeService {
 
             RecipeIngredient newRecipeIngredient = new RecipeIngredient(
                     recipeIngredientDto.amount(),
-                    recipeIngredientDto.measure_unit(),
+                    recipeIngredientDto.measureUnit(),
                     recipe,
                     ingredient
             );
             recipeIngredients.add(newRecipeIngredient);
         }
-        recipe.setRecipeIngredients(recipeIngredients);
+        recipe.getRecipeIngredients().addAll(recipeIngredients);
     }
 
-    private void validateCreatingRecipeRequest(CreatingRecipeRequest request) {
-        BindingResult bindingResult = new BeanPropertyBindingResult(request, "registrationRequest");
+    private void validateCreateRecipeRequest(CreateRecipeRequest request) {
+        BindingResult bindingResult = new BeanPropertyBindingResult(request, "createRecipeRequest");
         validator.validate(request, bindingResult);
 
         if (bindingResult.hasErrors()) {
-            throw new InvalidCreatingRecipeRequestException("Invalid creating recipe request " + bindingResult.getAllErrors());
+            throw new InvalidCreatingRecipeRequestException("Invalid create recipe request " + bindingResult.getAllErrors());
         }
+    }
+
+    private void validateUpdateRecipeRequest(UpdateRecipeRequest request) {
+        BindingResult bindingResult = new BeanPropertyBindingResult(request, "UpdateRecipeRequest");
+        validator.validate(request, bindingResult);
+
+        if (bindingResult.hasErrors()) {
+            throw new InvalidCreatingRecipeRequestException("Invalid update recipe request " + bindingResult.getAllErrors());
+        }
+    }
+
+    void deleteByRecipe(Recipe recipe) {
+        for (RecipeIngredient recipeIngredient : recipe.getRecipeIngredients()) {
+            recipeIngredientRepository.deleteById(recipeIngredient.getId());
+        }
+        recipe.getRecipeIngredients().clear();
     }
 }

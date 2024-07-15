@@ -10,7 +10,6 @@ import java.util.Set;
 @Entity
 @Setter
 @Getter
-@ToString
 @NoArgsConstructor
 public class Recipe {
     @Id
@@ -42,7 +41,8 @@ public class Recipe {
     @JoinColumn(name = "user_id")
     private AppUser user;
 
-    @OneToMany(mappedBy = "recipe", fetch = FetchType.EAGER)
+    @Setter
+    @OneToMany(mappedBy = "recipe", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private Set<RecipeIngredient> recipeIngredients;
 
@@ -76,4 +76,6 @@ public class Recipe {
         this.likes = likes;
         this.bookmarks = bookmarks;
     }
+
+
 }

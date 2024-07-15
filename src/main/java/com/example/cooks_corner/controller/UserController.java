@@ -19,7 +19,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @Operation(summary = "Get user by name", description = "Returns user details based on the provided name.")
+    @Operation(summary = "Get user by title", description = "Returns user details based on the provided title.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User found and details returned"),
             @ApiResponse(responseCode = "404", description = "User not found")
