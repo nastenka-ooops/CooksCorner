@@ -9,7 +9,7 @@ public class RecipeMapper {
                 recipe.getId(),
                 recipe.getTitle(),
                 recipe.getUser().getName(),
-                recipe.getImage().getUrl(),
+                recipe.getImage() != null ? recipe.getImage().getUrl() : null,
                 recipe.getLikes().size(),
                 recipe.getBookmarks().size());
     }
