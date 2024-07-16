@@ -2,11 +2,14 @@ package com.example.cooks_corner.service;
 
 import com.example.cooks_corner.dto.UpdateUserProfileRequest;
 import com.example.cooks_corner.dto.UserDto;
+import com.example.cooks_corner.dto.UserListDto;
 import com.example.cooks_corner.dto.UserProfile;
 import com.example.cooks_corner.entity.AppUser;
+import com.example.cooks_corner.exception.FollowException;
 import com.example.cooks_corner.exception.InvalidCreatingRecipeRequestException;
 import com.example.cooks_corner.exception.UserNotFoundException;
 import com.example.cooks_corner.mapper.RecipeMapper;
+import com.example.cooks_corner.mapper.UserMapper;
 import com.example.cooks_corner.repository.AppUserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +23,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.Validator;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -77,6 +81,69 @@ public class UserService implements UserDetailsService {
                 userEntity.getFollowers().size(),
                 userEntity.getFollowings().size()
         );
+    }
+
+    public List<UserListDto> getUserFollowers(Long id) {
+        Optional<AppUser> user = userRepository.findById(id);
+        if (user.isEmpty()) {
+            throw new UserNotFoundException("user not found with id " + id);
+        }
+        AppUser userEntity = user.get();
+        return userEntity.getFollowers().stream().map(UserMapper::mapToUserListDto).toList();
+    }
+
+    public List<UserListDto> getUserFollowings(Long id) {
+        Optional<AppUser> user = userRepository.findById(id);
+        if (user.isEmpty()) {
+            throw new UserNotFoundException("user not found with id " + id);
+        }
+        AppUser userEntity = user.get();
+        return userEntity.getFollowings().stream().map(UserMapper::mapToUserListDto).toList();
+    }
+
+    public List<UserListDto> searchUsers(String query) {
+        return userRepository.searchByQuery(query).stream()
+                .map(UserMapper::mapToUserListDto).toList();
+    }
+
+    public void followUser(Long userId) {
+        AppUser currentUser = loadUserByUsername(getCurrentUser());
+
+        if (currentUser.getId().equals(userId)) {
+            throw new FollowException("You can not follow yourself");
+        }
+
+        Optional<AppUser> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
+            throw new UserNotFoundException("user not found with id " + userId);
+        }
+        AppUser followedUser = user.get();
+
+        currentUser.getFollowings().add(followedUser);
+        userRepository.save(currentUser);
+
+        followedUser.getFollowers().add(currentUser);
+        userRepository.save(followedUser);
+    }
+
+    public void unfollowUser(Long userId){
+        AppUser currentUser = loadUserByUsername(getCurrentUser());
+
+        if (currentUser.getId().equals(userId)) {
+            throw new FollowException("You can not unfollow yourself");
+        }
+
+        Optional<AppUser> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
+            throw new UserNotFoundException("user not found with id " + userId);
+        }
+        AppUser unfollowedUser = user.get();
+
+        currentUser.getFollowings().remove(unfollowedUser);
+        userRepository.save(currentUser);
+
+        unfollowedUser.getFollowers().remove(currentUser);
+        userRepository.save(unfollowedUser);
     }
 
     public UserProfile updateUserProfile(String request, MultipartFile image) {

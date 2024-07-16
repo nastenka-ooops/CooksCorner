@@ -59,6 +59,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleIllegalArgumentException() {
         return new ResponseEntity<>("Invalid JSON format for CreatingTourDto", HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(FollowException.class)
+    public ResponseEntity<String> handleFollowException() {
+        return new ResponseEntity<>("Follow exception", HttpStatus.BAD_REQUEST);
+    }
 /*
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGlobalException() {

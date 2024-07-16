@@ -2,7 +2,9 @@ package com.example.cooks_corner.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -12,7 +14,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "app_user")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 public class AppUser implements UserDetails {
     @Id

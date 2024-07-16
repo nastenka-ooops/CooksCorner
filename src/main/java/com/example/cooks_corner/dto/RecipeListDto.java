@@ -4,7 +4,7 @@ public record RecipeListDto(
         Long id,
         String title,
         String author,
-        String image_url,
+        String imageUrl,
         int likesAmount,
         int bookmarksAmount
 ) {
