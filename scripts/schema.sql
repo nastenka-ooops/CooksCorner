@@ -49,16 +49,24 @@ create table user_role_junction
 
 create table follower
 (
-    user_id     bigint  not null,
-    follower_id integer not null,
+    user_id     bigint  not null
+        constraint user_fk
+            references app_user,
+    follower_id integer not null
+        constraint follower_fk
+            references app_user,
     constraint follower_pk
         primary key (user_id, follower_id)
 );
 
 create table following
 (
-    user_id      bigint not null,
-    following_id bigint not null,
+    user_id      bigint not null
+        constraint user_fk
+            references app_user,
+    following_id bigint not null
+        constraint following_fk
+            references app_user,
     constraint following_pk
         primary key (user_id, following_id)
 );
