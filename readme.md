@@ -15,7 +15,7 @@ CooksCorner is an innovative app designed for a convenient and inspiring culinar
 - [Swagger](https://swagger.io/) - Documentation
 
 ## Entity Relationship Diagram
-![ERD](https://github.com/nastenka-ooops/RecipeHub/blob/main/diagrams/ERD.drawio.png)
+![ERD](https://github.com/nastenka-ooops/RecipeHub/blob/main/diagrams/ERD.png)
 
 ## Installation
 To install the application, follow these steps:
